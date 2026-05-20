@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-brand-mist text-brand-dark antialiased;
+}
+
+a {
+  @apply transition-colors duration-200;
+}
+

@@ -1,0 +1,126 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { TopBar } from "@/components/dashboard/top-bar";
+import { motion } from "framer-motion";
+import { Building2, MapPin, Users } from "lucide-react";
+import { api } from "@/lib/api";
+
+interface Property {
+  id: string;
+  name: string;
+  address: string;
+  type: string;
+  units: Array<{
+    id: string;
+    unitNumber: string;
+    status: string;
+    bedrooms: number | null;
+    squareFeet: number | null;
+    leases: Array<{
+      id: string;
+      status: string;
+      tenant: {
+        user: {
+          email: string;
+        };
+      };
+    }>;
+  }>;
+}
+
+export default function PropertyManagerPropertiesPage() {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadProperties();
+  }, []);
+
+  const loadProperties = async () => {
+    try {
+      setLoading(true);
+      const data = await api.get<Property[]>("/property-managers/properties");
+      setProperties(data);
+    } catch (error) {
+      console.error("Failed to load properties:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateOccupancy = (property: Property) => {
+    if (property.units.length === 0) return "0%";
+    const occupied = property.units.filter((u) => u.leases.length > 0).length;
+    return `${Math.round((occupied / property.units.length) * 100)}%`;
+  };
+
+  return (
+    <>
+      <TopBar title="Properties" subtitle="View and manage your assigned properties." />
+      <section className="flex-1 space-y-10 px-8 py-10">
+        {loading ? (
+          <div className="text-center text-brand-slate py-12">Loading properties...</div>
+        ) : properties.length === 0 ? (
+          <div className="text-center text-brand-slate py-12">No properties assigned yet.</div>
+        ) : (
+          <div className="grid gap-8 lg:grid-cols-3">
+            {properties.map((property, idx) => (
+              <motion.article
+                key={property.id}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3, delay: idx * 0.08 }}
+                className="overflow-hidden rounded-3xl border border-brand-mist bg-white shadow-sm"
+              >
+                <div className="relative h-48 bg-gradient-to-br from-brand to-brand-amber">
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
+                    <h3 className="font-heading text-xl">{property.name}</h3>
+                    <p className="flex items-center gap-2 text-xs text-white/70">
+                      <MapPin className="h-4 w-4" />
+                      {property.address}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-4 p-6 text-sm text-brand-slate">
+                  <p className="flex items-center gap-2 text-brand-dark">
+                    <Building2 className="h-4 w-4 text-brand" />
+                    {property.units.length} units
+                  </p>
+                  <div className="rounded-2xl bg-brand-mist p-4">
+                    <p className="text-xs uppercase tracking-wide text-brand-slate">Occupancy</p>
+                    <p className="mt-1 text-2xl font-semibold text-brand-dark">{calculateOccupancy(property)}</p>
+                    <div className="mt-4 h-2 rounded-full bg-white">
+                      <div className="h-full rounded-full bg-brand" style={{ width: calculateOccupancy(property) }} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-brand-dark">Active Tenants:</p>
+                    {property.units
+                      .filter((u) => u.leases.length > 0)
+                      .slice(0, 3)
+                      .map((unit) => (
+                        <div key={unit.id} className="flex items-center gap-2 text-xs">
+                          <Users className="h-3 w-3 text-brand" />
+                          <span className="text-brand-slate">
+                            Unit {unit.unitNumber}: {unit.leases[0]?.tenant.user.email.split("@")[0]}
+                          </span>
+                        </div>
+                      ))}
+                    {property.units.filter((u) => u.leases.length > 0).length > 3 && (
+                      <p className="text-xs text-brand-slate">
+                        +{property.units.filter((u) => u.leases.length > 0).length - 3} more
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
