@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TopBar } from "@/components/dashboard/top-bar";
 import { motion } from "framer-motion";
@@ -24,7 +24,7 @@ interface Complaint {
   updatedAt?: string;
 }
 
-export default function LandlordComplaintsPage() {
+function LandlordComplaintsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tenantFilter = searchParams?.get("tenant");
@@ -125,3 +125,10 @@ export default function LandlordComplaintsPage() {
   );
 }
 
+export default function LandlordComplaintsPage() {
+  return (
+    <Suspense fallback={<div className="px-8 py-10 text-brand-slate">Loading complaints...</div>}>
+      <LandlordComplaintsPageContent />
+    </Suspense>
+  );
+}

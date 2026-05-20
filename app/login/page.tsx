@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -12,7 +12,7 @@ import { getUserFriendlyError } from "@/lib/errors";
 
 type UserType = "landlord" | "tenant" | "property-manager";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const searchParams = useSearchParams();
   const [userType, setUserType] = useState<UserType>(() => {
     const param = searchParams?.get("userType");
@@ -206,3 +206,16 @@ export default function LoginPage() {
   );
 }
 
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-brand-mist text-brand-slate">
+          Loading...
+        </div>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
+  );
+}

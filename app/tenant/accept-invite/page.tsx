@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { getUserFriendlyError } from "@/lib/errors";
 
-export default function TenantAcceptInvitePage() {
+function TenantAcceptInvitePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = searchParams?.get("token") ?? "";
@@ -162,3 +162,16 @@ export default function TenantAcceptInvitePage() {
   );
 }
 
+export default function TenantAcceptInvitePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-brand-mist text-brand-slate">
+          Loading...
+        </div>
+      }
+    >
+      <TenantAcceptInvitePageContent />
+    </Suspense>
+  );
+}

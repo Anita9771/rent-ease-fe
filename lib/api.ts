@@ -23,16 +23,16 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = this.getAuthToken();
     const isFormDataPayload = this.isFormData(options.body);
-    const headers: HeadersInit = {
-      ...options.headers,
-    };
+    const headers = new Headers(options.headers);
 
     if (!isFormDataPayload && options.body !== undefined && !(options.body instanceof Blob)) {
-      headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
+      if (!headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+      }
     }
 
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.set('Authorization', `Bearer ${token}`);
     }
 
     let response: Response;

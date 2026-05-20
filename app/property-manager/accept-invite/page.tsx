@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -9,7 +9,7 @@ import { ArrowLeft, UserCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { getUserFriendlyError } from "@/lib/errors";
 
-export default function PropertyManagerAcceptInvitePage() {
+function PropertyManagerAcceptInvitePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = searchParams?.get("token");
@@ -156,3 +156,16 @@ export default function PropertyManagerAcceptInvitePage() {
   );
 }
 
+export default function PropertyManagerAcceptInvitePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-brand-mist text-brand-slate">
+          Loading...
+        </div>
+      }
+    >
+      <PropertyManagerAcceptInvitePageContent />
+    </Suspense>
+  );
+}

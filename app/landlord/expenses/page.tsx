@@ -18,14 +18,19 @@ interface Expense {
   unit?: { unitNumber: string } | null;
 }
 
-interface Breakdown {
+interface ExpenseSummaryRow {
   category: string;
   total: number;
 }
 
+interface CategoryBreakdown {
+  category: string;
+  value: number;
+}
+
 export default function LandlordExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [breakdown, setBreakdown] = useState<Breakdown[]>([]);
+  const [breakdown, setBreakdown] = useState<CategoryBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -51,7 +56,7 @@ export default function LandlordExpensesPage() {
       setLoading(true);
       const [expensesData, summaryData] = await Promise.all([
         api.get<Expense[]>("/expenses"),
-        api.get<Breakdown[]>("/expenses/summary"),
+        api.get<ExpenseSummaryRow[]>("/expenses/summary"),
       ]);
       setExpenses(expensesData);
       // Transform summary to percentage breakdown
