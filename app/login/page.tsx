@@ -5,12 +5,32 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { ArrowLeft, Building2, ShieldCheck, User } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { api } from "@/lib/api";
 import { getUserFriendlyError } from "@/lib/errors";
+import {
+  clearAuth,
+  dashboardPathForRole,
+  setAuthSession,
+  type UserRole,
+} from "@/lib/auth";
+import { useRedirectIfAuthenticated } from "@/components/auth/protected-route";
 
 type UserType = "landlord" | "tenant" | "property-manager";
+
+const userTypeToRole: Record<UserType, UserRole> = {
+  landlord: "LANDLORD",
+  tenant: "TENANT",
+  "property-manager": "PROPERTY_MANAGER",
+};
+
+const roleLabels: Record<UserRole, string> = {
+  LANDLORD: "landlord",
+  TENANT: "tenant",
+  PROPERTY_MANAGER: "property manager",
+};
 
 function LoginPageContent() {
   const searchParams = useSearchParams();
@@ -30,6 +50,8 @@ function LoginPageContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useRedirectIfAuthenticated();
 
   useEffect(() => {
     const param = searchParams?.get("userType");
@@ -52,24 +74,21 @@ function LoginPageContent() {
 
     try {
       const response = await api.post<{
-        user: { role: string; landlordId?: string; tenantId?: string };
+        user: { role: UserRole; landlordId?: string; tenantId?: string };
         tokens: { accessToken: string; refreshToken: string };
       }>("/auth/login", formData);
 
-      if (typeof window !== "undefined") {
-        const { setAuthTokens } = await import("@/lib/auth");
-        setAuthTokens(response.tokens.accessToken, response.tokens.refreshToken);
+      const expectedRole = userTypeToRole[userType];
+      if (response.user.role !== expectedRole) {
+        clearAuth();
+        setError(
+          `This email is registered as a ${roleLabels[response.user.role]} account. Switch to the "${roleLabels[response.user.role]}" tab above, or sign in from the correct portal.`,
+        );
+        return;
       }
 
-      if (response.user.role === "LANDLORD") {
-        router.replace("/landlord/dashboard");
-      } else if (response.user.role === "TENANT") {
-        router.replace("/tenant/dashboard");
-      } else if (response.user.role === "PROPERTY_MANAGER") {
-        router.replace("/property-manager/dashboard");
-      } else {
-        setError("Invalid user role");
-      }
+      setAuthSession(response.tokens, response.user.role);
+      router.replace(dashboardPathForRole(response.user.role));
     } catch (err) {
       setError(getUserFriendlyError(err, "We couldn't sign you in. Please check your email and password."));
     } finally {
@@ -150,13 +169,12 @@ function LoginPageContent() {
                   Forgot password?
                 </Link>
               </div>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 required
+                autoComplete="current-password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full rounded-xl border border-brand-mist bg-white px-4 py-3 text-brand-dark placeholder:text-brand-slate focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-colors"
                 placeholder="Enter your password"
               />
             </div>

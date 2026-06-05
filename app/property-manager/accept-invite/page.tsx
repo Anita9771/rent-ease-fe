@@ -5,9 +5,11 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { ArrowLeft, UserCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { getUserFriendlyError } from "@/lib/errors";
+import { clearAuth, dashboardPathForRole, setAuthSession } from "@/lib/auth";
 
 function PropertyManagerAcceptInvitePageContent() {
   const router = useRouter();
@@ -41,16 +43,21 @@ function PropertyManagerAcceptInvitePageContent() {
     setLoading(true);
 
     try {
-      await api.post("/auth/accept-invite", {
+      clearAuth();
+      const response = await api.post<{
+        user: { id: string; email: string; role: string };
+        tokens: { accessToken: string; refreshToken: string };
+      }>("/auth/accept-invite", {
         inviteToken,
         email: formData.email,
         password: formData.tempPassword,
         phone: formData.phone || undefined,
       });
-      setSuccess("Account setup complete! You can now log in.");
+      setAuthSession(response.tokens, "PROPERTY_MANAGER");
+      setSuccess("Account setup complete! Opening your dashboard...");
       setTimeout(() => {
-        router.replace("/login?userType=property-manager");
-      }, 2000);
+        router.replace(dashboardPathForRole("PROPERTY_MANAGER"));
+      }, 1200);
     } catch (err) {
       setError(getUserFriendlyError(err, "We couldn't complete your registration. Please try again."));
     } finally {
@@ -117,13 +124,12 @@ function PropertyManagerAcceptInvitePageContent() {
               <label htmlFor="tempPassword" className="block text-sm font-medium text-brand-dark mb-2">
                 Temporary password
               </label>
-              <input
+              <PasswordInput
                 id="tempPassword"
-                type="password"
                 required
+                autoComplete="new-password"
                 value={formData.tempPassword}
                 onChange={(e) => setFormData({ ...formData, tempPassword: e.target.value })}
-                className="w-full rounded-xl border border-brand-mist bg-white px-4 py-3 text-brand-dark placeholder:text-brand-slate focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-colors"
                 placeholder="Enter the password from your invite email"
               />
               <p className="mt-2 text-xs text-brand-slate">You can change this password later from Settings → Change password.</p>

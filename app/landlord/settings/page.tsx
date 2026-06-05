@@ -7,6 +7,7 @@ import { LogOut } from "lucide-react";
 import { TopBar } from "@/components/dashboard/top-bar";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api";
 import { uploadAvatar } from "@/lib/uploads";
@@ -342,13 +343,12 @@ export default function LandlordSettingsPage() {
                 <label htmlFor="currentPassword" className="block text-sm font-medium text-brand-dark mb-2">
                   Current password
                 </label>
-                <input
+                <PasswordInput
                   id="currentPassword"
-                  type="password"
                   required
+                  autoComplete="current-password"
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  className="w-full rounded-xl border border-brand-mist bg-white px-4 py-3 text-brand-dark placeholder:text-brand-slate focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-colors"
                   placeholder="Enter current password"
                 />
               </div>
@@ -356,14 +356,13 @@ export default function LandlordSettingsPage() {
                 <label htmlFor="newPassword" className="block text-sm font-medium text-brand-dark mb-2">
                   New password
                 </label>
-                <input
+                <PasswordInput
                   id="newPassword"
-                  type="password"
                   required
                   minLength={8}
+                  autoComplete="new-password"
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  className="w-full rounded-xl border border-brand-mist bg-white px-4 py-3 text-brand-dark placeholder:text-brand-slate focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-colors"
                   placeholder="At least 8 characters"
                 />
               </div>
@@ -371,13 +370,12 @@ export default function LandlordSettingsPage() {
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-brand-dark mb-2">
                   Confirm new password
                 </label>
-                <input
+                <PasswordInput
                   id="confirmPassword"
-                  type="password"
                   required
+                  autoComplete="new-password"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  className="w-full rounded-xl border border-brand-mist bg-white px-4 py-3 text-brand-dark placeholder:text-brand-slate focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-colors"
                   placeholder="Re-enter new password"
                 />
               </div>

@@ -5,8 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { api } from "@/lib/api";
 import { getUserFriendlyError } from "@/lib/errors";
+import { clearAuth, dashboardPathForRole, setAuthSession } from "@/lib/auth";
 
 function TenantAcceptInvitePageContent() {
   const router = useRouter();
@@ -41,14 +43,19 @@ function TenantAcceptInvitePageContent() {
     setLoading(true);
     setError(null);
     try {
-      await api.post("/auth/accept-invite", {
+      clearAuth();
+      const response = await api.post<{
+        user: { id: string; email: string; role: string };
+        tokens: { accessToken: string; refreshToken: string };
+      }>("/auth/accept-invite", {
         inviteToken,
         email: formData.email,
         password: formData.password,
         phone: formData.phone || undefined,
       });
+      setAuthSession(response.tokens, "TENANT");
       setSuccess(true);
-      setTimeout(() => router.replace("/tenant/login"), 1500);
+      setTimeout(() => router.replace(dashboardPathForRole("TENANT")), 1200);
     } catch (err) {
       setError(getUserFriendlyError(err, "We couldn't complete your registration. Please try again."));
     } finally {
@@ -114,14 +121,13 @@ function TenantAcceptInvitePageContent() {
               <label htmlFor="password" className="block text-sm font-medium text-brand-dark mb-2">
                 New password
               </label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 required
                 minLength={8}
+                autoComplete="new-password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full rounded-xl border border-brand-mist bg-white px-4 py-3 text-brand-dark placeholder:text-brand-slate focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-colors"
                 placeholder="At least 8 characters"
               />
             </div>
@@ -129,13 +135,12 @@ function TenantAcceptInvitePageContent() {
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-brand-dark mb-2">
                 Confirm password
               </label>
-              <input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 required
+                autoComplete="new-password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full rounded-xl border border-brand-mist bg-white px-4 py-3 text-brand-dark placeholder:text-brand-slate focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-colors"
                 placeholder="Re-enter password"
               />
             </div>
@@ -149,7 +154,7 @@ function TenantAcceptInvitePageContent() {
             )}
             {success && (
               <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-600">
-                Invitation accepted! Redirecting you to sign in...
+                Account activated! Opening your tenant dashboard...
               </div>
             )}
             <Button type="submit" className="w-full h-12" disabled={loading || !inviteToken}>

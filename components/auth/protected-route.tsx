@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { isAuthenticated, isAuthRoute } from "@/lib/auth";
+import {
+  clearAuth,
+  getAuthRole,
+  isAuthRoute,
+  isAuthenticated,
+  loginPathForRole,
+  roleForPathPrefix,
+  roleMatchesPath,
+  dashboardPathForRole,
+} from "@/lib/auth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,30 +19,27 @@ interface ProtectedRouteProps {
 }
 
 /**
- * ProtectedRoute component that redirects unauthenticated users to login
- * Only renders children if user is authenticated
+ * Protects routes by auth token and user role (landlord / tenant / property manager).
  */
 export function ProtectedRoute({ children, redirectTo }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
-  const [isAuth, setIsAuth] = useState(false);
+  const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    // Don't protect auth routes
     if (isAuthRoute(pathname)) {
-      setIsAuth(true);
+      setAllowed(true);
       setIsChecking(false);
       return;
     }
 
-    // Check authentication
     const authenticated = isAuthenticated();
-    setIsAuth(authenticated);
-    setIsChecking(false);
+    const role = getAuthRole();
 
-    if (!authenticated) {
-      // Determine redirect URL based on current path
+    if (!authenticated || !role) {
+      setAllowed(false);
+      setIsChecking(false);
       let loginUrl = "/login";
       if (pathname?.startsWith("/tenant")) {
         loginUrl = "/login?userType=tenant";
@@ -42,21 +48,43 @@ export function ProtectedRoute({ children, redirectTo }: ProtectedRouteProps) {
       } else if (pathname?.startsWith("/landlord")) {
         loginUrl = "/login?userType=landlord";
       }
-
       router.replace(redirectTo || loginUrl);
+      return;
     }
+
+    if (!roleMatchesPath(pathname, role)) {
+      clearAuth();
+      setAllowed(false);
+      setIsChecking(false);
+      const required = roleForPathPrefix(pathname);
+      router.replace(required ? loginPathForRole(required) : "/login");
+      return;
+    }
+
+    setAllowed(true);
+    setIsChecking(false);
   }, [pathname, router, redirectTo]);
 
-  // Show nothing while checking
   if (isChecking) {
     return null;
   }
 
-  // Only render children if authenticated or on auth route
-  if (!isAuth && !isAuthRoute(pathname)) {
+  if (!allowed && !isAuthRoute(pathname)) {
     return null;
   }
 
   return <>{children}</>;
 }
 
+/** Redirect already-authenticated users away from login to their dashboard. */
+export function useRedirectIfAuthenticated() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!isAuthenticated()) return;
+    const role = getAuthRole();
+    if (!role || pathname !== "/login") return;
+    router.replace(dashboardPathForRole(role));
+  }, [pathname, router]);
+}

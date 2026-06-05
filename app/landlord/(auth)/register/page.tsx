@@ -5,9 +5,10 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { ArrowLeft, Building2 } from "lucide-react";
 import { api } from "@/lib/api";
-import { setAuthTokens } from "@/lib/auth";
+import { setAuthSession } from "@/lib/auth";
 import { uploadAvatar } from "@/lib/uploads";
 import { getUserFriendlyError } from "@/lib/errors";
 
@@ -78,7 +79,7 @@ export default function RegisterPage() {
         title: formData.title || undefined,
       });
 
-      setAuthTokens(response.tokens.accessToken, response.tokens.refreshToken);
+      setAuthSession(response.tokens, "LANDLORD");
 
       if (avatarFile) {
         try {
@@ -240,13 +241,12 @@ export default function RegisterPage() {
               <label htmlFor="password" className="block text-sm font-medium text-brand-dark mb-2">
                 Password
               </label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 required
+                autoComplete="new-password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full rounded-xl border border-brand-mist bg-white px-4 py-3 text-brand-dark placeholder:text-brand-slate focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-colors"
                 placeholder="At least 8 characters"
               />
             </div>
@@ -255,13 +255,12 @@ export default function RegisterPage() {
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-brand-dark mb-2">
                 Confirm password
               </label>
-              <input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 required
+                autoComplete="new-password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full rounded-xl border border-brand-mist bg-white px-4 py-3 text-brand-dark placeholder:text-brand-slate focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20 transition-colors"
                 placeholder="Re-enter your password"
               />
             </div>
